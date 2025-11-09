@@ -1,0 +1,92 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Imposter — Spieler</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="card header">
+      <div>
+        <div class="small">Spieler beitreten</div>
+        <strong>Imposter (Spieler)</strong>
+      </div>
+      <div>
+        <small class="small">Deutsch</small>
+      </div>
+    </div>
+
+    <div class="card">
+      <label class="small">Name</label>
+      <input id="name" class="input" placeholder="Dein Name" value="">
+      <label class="small" style="margin-top:8px">Raumcode</label>
+      <input id="code" class="input" placeholder="Raumcode z.B. AB123">
+      <div style="display:flex; gap:8px; margin-top:8px">
+        <button id="joinBtn" class="btn">Beitreten</button>
+      </div>
+      <div id="joinError" style="color:#800; margin-top:8px; display:none"></div>
+    </div>
+
+    <div id="lobbyArea" style="display:none">
+      <div class="card">
+        <div class="row">
+          <div>
+            <div class="small">Raum</div>
+            <strong id="roomCode"></strong>
+          </div>
+          <div style="margin-left:auto" class="small">Phase: <span id="phase">—</span></div>
+        </div>
+        <div style="margin-top:8px" class="playersList card" id="playersList"></div>
+      </div>
+
+      <div class="card">
+        <div class="small">Kategorie</div>
+        <div id="category" class="small" style="font-weight:700">—</div>
+      </div>
+
+      <div class="card bigCard" id="roleCard">
+        <div id="roleTop" class="small">—</div>
+        <div id="mainWord" style="margin-top:6px; font-size:20px">—</div>
+      </div>
+
+      <div class="card">
+        <div class="small">Deine Hinweise (max <span id="numHints">2</span>)</div>
+        <div style="display:flex; gap:8px; margin-top:8px">
+          <input id="hintInput" class="input" placeholder="Begriff eingeben">
+          <button id="sendHint" class="btn">Senden</button>
+        </div>
+        <div id="hintMsg" class="small" style="margin-top:8px;color:green;display:none">Gesendet</div>
+      </div>
+
+      <div class="card" id="votingCard" style="display:none">
+        <div class="small">Voting gestartet — gib deinen Verdacht ein</div>
+        <div style="display:flex; gap:8px; margin-top:8px">
+          <input id="voteInput" class="input" placeholder="Name vom Verdächtigen">
+          <button id="voteBtn" class="btn">Abschicken</button>
+        </div>
+        <div id="guessBox" style="display:none; margin-top:10px">
+          <div class="small">Du bist Imposter — gib deinen Begriffs-Verdacht ein</div>
+          <div style="display:flex; gap:8px; margin-top:8px">
+            <input id="guessInput" class="input" placeholder="Dein Tipp">
+            <button id="guessBtn" class="btn">Abschicken</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="revealArea" style="display:none">
+        <div class="small">Reveal (wird vom Host ausgelöst)</div>
+        <pre id="revealJson" style="white-space:pre-wrap"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/client.js"></script>
+  <script>
+    // init role: player
+    ClientApp.initPlayer();
+  </script>
+</body>
+</html>

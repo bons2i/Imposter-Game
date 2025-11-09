@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Imposter — Host</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="card header">
+      <div>
+        <div class="small">Host-View</div>
+        <strong>Imposter (Host)</strong>
+      </div>
+      <div class="small">Deutsch</div>
+    </div>
+
+    <div class="card">
+      <label class="small">Max Spieler</label>
+      <input id="maxPlayers" class="input" type="number" value="12">
+      <label class="small" style="margin-top:8px">Anzahl Hinweise (1-2)</label>
+      <select id="numHints" class="input">
+        <option value="1">1</option>
+        <option value="2" selected>2</option>
+      </select>
+
+      <div style="display:flex; gap:8px; margin-top:8px">
+        <button id="createBtn" class="btn">Raum erstellen</button>
+        <span id="createdCode" style="font-weight:700; margin-left:8px"></span>
+      </div>
+    </div>
+
+    <div id="hostLobby" style="display:none">
+      <div class="card">
+        <div class="row">
+          <div>
+            <div class="small">Raum</div>
+            <strong id="hostRoomCode"></strong>
+          </div>
+          <div style="margin-left:auto" class="small">Phase: <span id="hostPhase">—</span></div>
+        </div>
+
+        <div style="margin-top:8px" class="playersList" id="hostPlayers"></div>
+      </div>
+
+      <div class="card">
+        <label class="small">Kategorie (optional)</label>
+        <input id="hostCategory" class="input" placeholder="z.B. Anime">
+        <label class="small" style="margin-top:8px">Begriff</label>
+        <input id="hostWord" class="input" placeholder="Begriff eingeben">
+        <div style="display:flex; gap:8px; margin-top:8px">
+          <button id="setWordBtn" class="btn">Rollen austeilen</button>
+          <button id="startVote" class="btn ghost">Voting starten</button>
+          <button id="revealBtn" class="btn danger">Reveal</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="small">Host Sicht (Imposter wird hier angezeigt)</div>
+        <div id="hostInfo" style="font-weight:700; margin-top:8px">—</div>
+      </div>
+
+      <div class="card">
+        <div class="small">Reveal Ergebnis (wenn sichtbar)</div>
+        <pre id="hostReveal" style="white-space:pre-wrap"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/client.js"></script>
+  <script>
+    ClientApp.initHost();
+  </script>
+</body>
+</html>

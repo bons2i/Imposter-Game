@@ -1,0 +1,93 @@
+/* style.css - mobile first, blau-türkis gradient */
+:root{
+  --bg1:#00b4d8;
+  --bg2:#90e0ef;
+  --card:#ffffff;
+  --accent:#ff6b6b;
+  --text:#033049;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: linear-gradient(180deg,var(--bg1),var(--bg2));
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  padding:12px;
+}
+
+/* common container */
+.container{
+  max-width:480px;
+  margin:0 auto;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+/* simple card */
+.card{
+  background: rgba(255,255,255,0.9);
+  border-radius:14px;
+  padding:12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+}
+
+/* big center role/word */
+.bigCard{
+  border-radius:12px;
+  padding:18px;
+  text-align:center;
+  font-weight:700;
+  font-size:22px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85));
+}
+
+/* red imposter card */
+.imposter {
+  background: linear-gradient(180deg, #ffb3b3, #ff8a8a);
+  color: #3b0a0a;
+}
+
+/* top header */
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+}
+
+.row { display:flex; gap:8px; align-items:center; }
+.btn {
+  background: var(--text);
+  color: white;
+  border: none;
+  padding:10px 12px;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:600;
+}
+.btn.ghost{ background:transparent; color:var(--text); border: 1px solid rgba(0,0,0,0.08)}
+.btn.danger{ background:var(--accent); }
+
+.input {
+  width:100%;
+  padding:10px;
+  border-radius:10px;
+  border: 1px solid rgba(0,0,0,0.06);
+  font-size:16px;
+}
+
+/* players list */
+.playersList{ display:flex; flex-direction:column; gap:8px; }
+.playerRow{ display:flex; justify-content:space-between; align-items:center; padding:8px; border-radius:8px; background: rgba(0,0,0,0.03) }
+.hintList { font-size:14px; color: #234; opacity:0.9; margin-top:6px;}
+.small { font-size:13px; opacity:0.85; }
+
+/* responsive */
+@media(min-width:700px){
+  .container{ max-width:900px; }
+  .bigCard { font-size:28px }
+}

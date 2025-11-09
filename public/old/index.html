@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Impostor Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Impostor Game 👀</h1>
+
+    <div id="login">
+        <input id="nameInput" placeholder="Dein Name">
+        <button id="joinBtn">Beitreten</button>
+    </div>
+
+    <div id="game" class="hidden">
+        <p>Spieler im Spiel:</p>
+        <ul id="playerList"></ul>
+
+        <input id="wordInput" placeholder="Begriff">
+        <button id="startBtn">Spiel starten</button>
+
+        <p id="yourWord"></p>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
