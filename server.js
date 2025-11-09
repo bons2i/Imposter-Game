@@ -161,6 +161,7 @@ io.on('connection', (socket) => {
   // Host reveal
 socket.on('reveal', (data) => {
   // Raum aus den Daten ziehen
+  console.log('Reveal event received:', data);
   const roomId = data.code;
   
   if (!roomId) {
