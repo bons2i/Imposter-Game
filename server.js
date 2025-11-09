@@ -159,29 +159,41 @@ io.on('connection', (socket) => {
   });
 
   // Host reveal
-  socket.on('reveal', ({ code }, cb) => {
-    const room = rooms[code];
-    if (!room) return cb && cb({ ok:false, err:'Raum fehlt' });
-    if (socket.id !== room.hostId) return cb && cb({ ok:false, err:'Nur Host' });
+socket.on('reveal', (data) => {
+  // Raum aus den Daten ziehen
+  const roomId = data.code;
+  
+  if (!roomId) {
+    console.error('Reveal: Kein Raum angegeben');
+    return;
+  }
 
-    room.phase = 'reveal';
-    io.to(code).emit('reveal', {
-      votes: room.votes,
-      guesses: room.guesses,
-      players: simplifyPlayers(room.players),
-      imposter: findImposter(room)
-    });
-    io.to(code).emit('room-state', sanitizeRoomForClients(code));
-    cb && cb({ ok:true });
-    console.log('Reveal in', code);
-  });
+  const room = rooms[roomId];
+  if (!room) {
+    console.error('Reveal: Raum existiert nicht', roomId);
+    return;
+  }
 
-  io.to(roomId).emit('reveal', {
-    players: playersData,     // alle Spieler + ihre Hinweise
-    imposter: imposterData,   // nur Host bekommt das
-    votes: votesData,
-    guesses: guessesData,
-    hostView: socket.id === hostSocketId // true für Host, false für Spieler
+  // Daten vorbereiten
+  const revealData = {
+    players: {},   // Name, Hinweise etc.
+    votes: room.votes || {},
+    guesses: room.guesses || {},
+    imposter: room.imposter || null,
+    hostView: true
+  };
+
+  // Spieler-Daten strukturieren
+  for (const playerId in room.players) {
+    const player = room.players[playerId];
+    revealData.players[playerId] = {
+      name: player.name,
+      hints: player.hints || []
+    };
+  }
+
+  // Emit an alle im Raum
+  io.to(roomId).emit('reveal', revealData);
 });
 
   // disconnect handling
