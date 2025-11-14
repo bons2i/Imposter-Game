@@ -203,7 +203,10 @@ socket.on('reveal', (data) => {
   playersReveal.appendChild(header);
 
   const impDiv = document.createElement('div');
-  const impName = imposter && (imposter.name || imposter) ? (imposter.name || imposter) : 'Unbekannt';
+const impName = imposter && typeof imposter === 'object' && imposter.name
+  ? imposter.name
+  : (typeof imposter === 'string' ? imposter : 'Unbekannt');
+
   impDiv.innerHTML = `<strong>Impostor:</strong> ${impName}`;
   playersReveal.appendChild(impDiv);
 
@@ -212,12 +215,14 @@ socket.on('reveal', (data) => {
   playersHeader.textContent = 'Spieler & Hinweise:';
   playersReveal.appendChild(playersHeader);
 
-  Object.entries(players).forEach(([pid, p]) => {
-    const pDiv = document.createElement('div');
-    const hintText = (p.hints && p.hints.length > 0) ? p.hints.join(' • ') : '(keine Hinweise)';
-    pDiv.textContent = `${p.name}: ${hintText}`;
-    playersReveal.appendChild(pDiv);
-  });
+  Object.entries(players || {}).forEach(([pid, p]) => {
+  if (!p || !p.name) return; // defensive
+  const pDiv = document.createElement('div');
+  const hintText = (p.hints && p.hints.length > 0) ? p.hints.join(' • ') : '(keine Hinweise)';
+  pDiv.textContent = `${p.name}: ${hintText}`;
+  playersReveal.appendChild(pDiv);
+});
+
 
   // Votes: voterName -> votedFor
   if (Object.keys(votes).length > 0) {
@@ -225,12 +230,13 @@ socket.on('reveal', (data) => {
     vH.textContent = 'Votes:';
     playersReveal.appendChild(vH);
 
-    Object.entries(votes).forEach(([voterPid, votedForName]) => {
-      const voterName = (players[voterPid] && players[voterPid].name) ? players[voterPid].name : voterPid;
-      const line = document.createElement('div');
-      line.textContent = `${voterName} → ${votedForName || '(leer)'}`;
-      playersReveal.appendChild(line);
-    });
+    Object.entries(votes || {}).forEach(([voterPid, votedForName]) => {
+  const voterName = players?.[voterPid]?.name || voterPid;
+  const line = document.createElement('div');
+  line.textContent = `${voterName} → ${votedForName || '(leer)'}`;
+  playersReveal.appendChild(line);
+});
+
   }
 
   // Guesses: playerName -> guess
@@ -239,12 +245,13 @@ socket.on('reveal', (data) => {
     gH.textContent = 'Impostor-Tipps:';
     playersReveal.appendChild(gH);
 
-    Object.entries(guesses).forEach(([playerPid, guessStr]) => {
-      const playerName = (players[playerPid] && players[playerPid].name) ? players[playerPid].name : playerPid;
-      const line = document.createElement('div');
-      line.textContent = `${playerName}: ${guessStr || '(leer)'}`;
-      playersReveal.appendChild(line);
-    });
+    Object.entries(guesses || {}).forEach(([playerPid, guessStr]) => {
+  const playerName = players?.[playerPid]?.name || playerPid;
+  const line = document.createElement('div');
+  line.textContent = `${playerName}: ${guessStr || '(leer)'}`;
+  playersReveal.appendChild(line);
+});
+
   }
 
   // opt. visuelle Rücksetzung von Buttons
