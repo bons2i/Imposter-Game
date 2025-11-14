@@ -167,23 +167,91 @@ function initPlayer() {
     });
 
     // Reveal anzeigen
-    socket.on('reveal', (data) => {
-        revealArea.style.display = 'block';
-        playersReveal.innerHTML = '';
+// Reveal-Ergebnis anzeigen (PLAYER)
+socket.on('reveal', (data) => {
+  console.log('Reveal event received:', data);
 
-        for (const playerId in data.players) {
-            const player = data.players[playerId];
-            const hints = (player.hints || []).join(', ');
-            const div = document.createElement('div');
-            div.textContent = `${player.name}: ${hints}`;
-            playersReveal.appendChild(div);
-        }
+  const roomId = data.code;
+  if (!roomId) {
+    console.error('Reveal: Kein Raum angegeben');
+    return;
+  }
 
-        // Host-Info (optional)
-        if (data.hostView) {
-            hostInfo.textContent = `Imposter: ${data.imposter.name}`;
-        }
+  // Reveal-Bereich vorbereiten
+  revealArea.style.display = 'block';
+  revealArea.scrollIntoView({ behavior: 'smooth' });
+  playersReveal.innerHTML = '';
+  hostInfo.textContent = '';
+
+  // Eingaben/Controls ausblenden & resetten
+  hintInput.style.display = 'none';
+  sendHint.style.display = 'none';
+  votingCard.style.display = 'none';
+  voteInput.value = '';
+  guessInput.value = '';
+
+  // sichere defaults
+  const players = data.players || {};     // keyed by socketId -> { name, hints, role? }
+  const votes = data.votes || {};         // keyed by voterSocketId -> votedForName
+  const guesses = data.guesses || {};     // keyed by playerSocketId -> guessString
+  const word = data.word || data.roomWord || '—';
+  const imposter = data.imposter || null; // maybe { id, name }
+
+  // Anzeige: gesuchtes Wort + Imposter (falls bekannt)
+  const header = document.createElement('div');
+  header.innerHTML = `<strong>Gesuchtes Wort:</strong> ${word}`;
+  playersReveal.appendChild(header);
+
+  const impDiv = document.createElement('div');
+  const impName = imposter && (imposter.name || imposter) ? (imposter.name || imposter) : 'Unbekannt';
+  impDiv.innerHTML = `<strong>Impostor:</strong> ${impName}`;
+  playersReveal.appendChild(impDiv);
+
+  // Spieler + ihre Hinweise
+  const playersHeader = document.createElement('h4');
+  playersHeader.textContent = 'Spieler & Hinweise:';
+  playersReveal.appendChild(playersHeader);
+
+  Object.entries(players).forEach(([pid, p]) => {
+    const pDiv = document.createElement('div');
+    const hintText = (p.hints && p.hints.length > 0) ? p.hints.join(' • ') : '(keine Hinweise)';
+    pDiv.textContent = `${p.name}: ${hintText}`;
+    playersReveal.appendChild(pDiv);
+  });
+
+  // Votes: voterName -> votedFor
+  if (Object.keys(votes).length > 0) {
+    const vH = document.createElement('h4');
+    vH.textContent = 'Votes:';
+    playersReveal.appendChild(vH);
+
+    Object.entries(votes).forEach(([voterPid, votedForName]) => {
+      const voterName = (players[voterPid] && players[voterPid].name) ? players[voterPid].name : voterPid;
+      const line = document.createElement('div');
+      line.textContent = `${voterName} → ${votedForName || '(leer)'}`;
+      playersReveal.appendChild(line);
     });
+  }
+
+  // Guesses: playerName -> guess
+  if (Object.keys(guesses).length > 0) {
+    const gH = document.createElement('h4');
+    gH.textContent = 'Impostor-Tipps:';
+    playersReveal.appendChild(gH);
+
+    Object.entries(guesses).forEach(([playerPid, guessStr]) => {
+      const playerName = (players[playerPid] && players[playerPid].name) ? players[playerPid].name : playerPid;
+      const line = document.createElement('div');
+      line.textContent = `${playerName}: ${guessStr || '(leer)'}`;
+      playersReveal.appendChild(line);
+    });
+  }
+
+  // opt. visuelle Rücksetzung von Buttons
+  document.querySelectorAll('button').forEach(btn => btn.style.backgroundColor = '');
+});
+
+
 
     // ----------------- Aktionen -----------------
 
@@ -320,42 +388,54 @@ guessBtn.addEventListener('click', () => {
       });
     });
 
-    socket.on('reveal', (data) => {
-    const hostReveal = document.getElementById('hostReveal');
-    hostReveal.innerHTML = ''; // clear previous
+// Reveal für Host: sauber und übersichtlich
+socket.on('reveal', (data) => {
+  const hostReveal = document.getElementById('hostReveal');
+  hostReveal.innerHTML = ''; // clear previous
 
-    // Imposter
-    const imposterDiv = document.createElement('div');
-    imposterDiv.innerHTML = `<strong>Imposter:</strong> ${data.imposter.name}`;
-    hostReveal.appendChild(imposterDiv);
+  const players = data.players || {};
+  const votes = data.votes || {};
+  const guesses = data.guesses || {};
+  const word = data.word || data.roomWord || '—';
+  const imp = data.imposter || null;
 
-    // Votes
-    const votesDiv = document.createElement('div');
-    votesDiv.innerHTML = '<strong>Votes:</strong>';
-    const votesList = document.createElement('ul');
-    for (const voterId in data.votes) {
-        const li = document.createElement('li');
-        li.textContent = `${data.players[voterId].name} -> ${data.votes[voterId]}`;
-        votesList.appendChild(li);
-    }
-    votesDiv.appendChild(votesList);
-    hostReveal.appendChild(votesDiv);
+  // Wort + Imposter
+  const w = document.createElement('div');
+  w.innerHTML = `<strong>Wort:</strong> ${word}`;
+  hostReveal.appendChild(w);
 
-    // Guesses
-    const guessesDiv = document.createElement('div');
-    guessesDiv.innerHTML = '<strong>Imposter Guesses:</strong>';
-    const guessesList = document.createElement('ul');
-    for (const playerId in data.guesses) {
-        const li = document.createElement('li');
-        li.textContent = `${data.players[playerId].name}: ${data.guesses[playerId]}`;
-        guessesList.appendChild(li);
-    }
-    guessesDiv.appendChild(guessesList);
-    hostReveal.appendChild(guessesDiv);
+  const impDiv = document.createElement('div');
+  const impName = imp && (imp.name || imp) ? (imp.name || imp) : 'Unbekannt';
+  impDiv.innerHTML = `<strong>Imposter:</strong> ${impName}`;
+  hostReveal.appendChild(impDiv);
 
-    playersDiv.appendChild(playersList);
-    hostReveal.appendChild(playersDiv);
+  // Votes
+  const votesDiv = document.createElement('div');
+  votesDiv.innerHTML = '<strong>Votes:</strong>';
+  const votesList = document.createElement('ul');
+  Object.entries(votes).forEach(([voterPid, votedFor]) => {
+    const li = document.createElement('li');
+    const voterName = (players[voterPid] && players[voterPid].name) ? players[voterPid].name : voterPid;
+    li.textContent = `${voterName} -> ${votedFor || '(leer)'}`;
+    votesList.appendChild(li);
+  });
+  votesDiv.appendChild(votesList);
+  hostReveal.appendChild(votesDiv);
+
+  // Guesses
+  const guessesDiv = document.createElement('div');
+  guessesDiv.innerHTML = '<strong>Imposter Guesses:</strong>';
+  const guessesList = document.createElement('ul');
+  Object.entries(guesses).forEach(([playerPid, guess]) => {
+    const li = document.createElement('li');
+    const playerName = (players[playerPid] && players[playerPid].name) ? players[playerPid].name : playerPid;
+    li.textContent = `${playerName}: ${guess || '(leer)'}`;
+    guessesList.appendChild(li);
+  });
+  guessesDiv.appendChild(guessesList);
+  hostReveal.appendChild(guessesDiv);
 });
+
 
 
     socket.on('room-closed', () => {
