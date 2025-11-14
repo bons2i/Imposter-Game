@@ -158,12 +158,11 @@ io.on('connection', (socket) => {
     cb && cb({ ok:true });
   });
 
-  // Host reveal
+
+// Host reveal
 socket.on('reveal', (data) => {
-  // Raum aus den Daten ziehen
-  console.log('Reveal event received:', data);
   const roomId = data.code;
-  
+
   if (!roomId) {
     console.error('Reveal: Kein Raum angegeben');
     return;
@@ -177,10 +176,12 @@ socket.on('reveal', (data) => {
 
   // Daten vorbereiten
   const revealData = {
-    players: {},   // Name, Hinweise etc.
+    code: roomId,
+    word: room.word || '',
+    players: {},
     votes: room.votes || {},
     guesses: room.guesses || {},
-    imposter: room.imposter || null,
+    imposter: findImposter(room) || null,
     hostView: true
   };
 
@@ -193,9 +194,12 @@ socket.on('reveal', (data) => {
     };
   }
 
-  // Emit an alle im Raum
+  console.log("Sending reveal data:", revealData);
+
+  // An alle Clients senden
   io.to(roomId).emit('reveal', revealData);
 });
+
 
   // disconnect handling
   socket.on('disconnect', () => {
