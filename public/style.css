@@ -84,7 +84,7 @@ body{
 .playersList{ display:flex; flex-direction:column; gap:8px; }
 .playerRow{ display:flex; justify-content:space-between; align-items:center; padding:8px; border-radius:8px; background: rgba(0,0,0,0.03) }
 .hintList { font-size:14px; color: #234; opacity:0.9; margin-top:6px;}
-.small { font-size:13px; opacity:0.85; }
+.small { font-size:15px; opacity:0.85; }
 
 /* responsive */
 @media(min-width:700px){
