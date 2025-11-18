@@ -14,8 +14,8 @@ const PORT = process.env.PORT || 3000;
 const rooms = {}; // { roomCode: { hostId, config:{numHints}, category, word, players: {socketId: {name, hints:[] , role}}, phase, votes: {}, guesses: {} } }
 
 // small room code generator
-function makeCode(len = 5) {
-  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+function makeCode(len = 3) {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ0123456789';
   let s = '';
   for (let i=0;i<len;i++) s += chars[Math.floor(Math.random()*chars.length)];
   return s;
@@ -26,7 +26,7 @@ io.on('connection', (socket) => {
 
   // Host creates room
   socket.on('create-room', (data, cb) => {
-    const code = makeCode(5);
+    const code = makeCode(3);
     rooms[code] = {
       hostId: socket.id,
       config: { numHints: data.numHints || 2, maxPlayers: data.maxPlayers || 12 },
