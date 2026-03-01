@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Imposter — Wer ist der Maulwurf?</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="start-page">
+    <div class="start-card card">
+      <div class="game-title">Imposter 🕵️</div>
+      <div class="game-subtitle">Wer kennt das Wort? Wer ist der Maulwurf?</div>
+
+      <div class="divider"></div>
+
+      <button class="btn btn-primary btn-full" onclick="go('/host.html')">
+        🎮 Spiel erstellen (Host)
+      </button>
+      <button class="btn btn-secondary btn-full" onclick="go('/player.html')">
+        👤 Spiel beitreten (Spieler)
+      </button>
+
+      <div class="row" style="gap:8px; margin-top:4px">
+        <button class="btn btn-secondary btn-full" onclick="openModal('rulesModal')">📋 Regeln</button>
+        <button class="btn btn-secondary btn-full" onclick="openModal('qrModal'); genQR()">📱 QR-Code</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Regeln Modal -->
+  <div id="rulesModal" class="modal-overlay" onclick="closeModal(this)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-title">📋 Spielregeln</div>
+      <ul class="rules-list">
+        <li><span class="rule-num">1</span> Der Host gibt eine Kategorie und einen Begriff ein.</li>
+        <li><span class="rule-num">2</span> Alle Spieler sehen den Begriff — nur der Imposter sieht ihn <em>nicht</em>, nur die Kategorie.</li>
+        <li><span class="rule-num">3</span> Jeder gibt Hinweise zum Begriff, ohne ihn direkt zu verraten.</li>
+        <li><span class="rule-num">4</span> Der Imposter versucht, unentdeckt zu bleiben und den Begriff anhand der Hinweise zu erraten.</li>
+        <li><span class="rule-num">5</span> Am Ende wird abgestimmt: Wer ist der Imposter?</li>
+        <li><span class="rule-num">6</span> Wenn der Imposter enttarnt wird, kann er noch einen letzten Rateversuch wagen. Rät er richtig, gewinnt er trotzdem!</li>
+      </ul>
+      <button class="btn btn-secondary btn-full mt-12" onclick="closeModal(document.getElementById('rulesModal'))">Schließen</button>
+    </div>
+  </div>
+
+  <!-- QR Modal -->
+  <div id="qrModal" class="modal-overlay" onclick="closeModal(this)">
+    <div class="modal-box" onclick="event.stopPropagation()" style="text-align:center">
+      <div class="modal-title">📱 Spieler-Link</div>
+      <p style="color:var(--text-dim); font-size:13px; margin-bottom:12px">Diesen Code scannen, um beizutreten:</p>
+      <canvas id="qrCanvas" style="border-radius:10px; max-width:200px"></canvas>
+      <div style="margin-top:10px; font-family:'Space Mono',monospace; font-size:12px; color:var(--text-dim); word-break:break-all" id="playerUrl"></div>
+      <button class="btn btn-secondary btn-full mt-12" onclick="closeModal(document.getElementById('qrModal'))">Schließen</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script>
+    function go(path) {
+      window.location.href = window.location.origin + path;
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.add('open');
+    }
+
+    function closeModal(el) {
+      el.classList.remove('open');
+    }
+
+    function genQR() {
+      const url = window.location.origin + '/player.html';
+      document.getElementById('playerUrl').textContent = url;
+      const canvas = document.getElementById('qrCanvas');
+      QRCode.toCanvas(canvas, url, {
+        width: 200,
+        color: { dark: '#00d4ff', light: '#1e2e4a' }
+      });
+    }
+  </script>
+</body>
+</html>

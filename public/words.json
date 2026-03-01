@@ -1,0 +1,64 @@
+{
+  "categories": [
+    {
+      "name": "Anime",
+      "words": ["Naruto", "Goku", "Luffy", "Pikachu", "Totoro", "Sasuke", "Mikasa", "Nezuko", "Levi", "Eren", "Kakashi", "Itachi", "Saitama", "Gintoki", "Vegeta"]
+    },
+    {
+      "name": "Filme",
+      "words": ["Titanic", "Inception", "Interstellar", "Avatar", "Matrix", "Joker", "Gladiator", "Parasite", "Oppenheimer", "Barbie", "Dune", "Top Gun", "Avengers", "Forrest Gump", "Shrek"]
+    },
+    {
+      "name": "Serien",
+      "words": ["Breaking Bad", "Stranger Things", "Game of Thrones", "The Office", "Friends", "Squid Game", "Dark", "Peaky Blinders", "The Crown", "Euphoria", "Severance", "House of Cards", "Sherlock", "Chernobyl", "Suits"]
+    },
+    {
+      "name": "Videospiele",
+      "words": ["Minecraft", "Fortnite", "Among Us", "GTA", "Zelda", "Mario", "Elden Ring", "FIFA", "Call of Duty", "Cyberpunk", "Roblox", "Skyrim", "Pokemon", "Stardew Valley", "Hollow Knight"]
+    },
+    {
+      "name": "Sportarten",
+      "words": ["Fußball", "Basketball", "Tennis", "Boxen", "Schwimmen", "Volleyball", "Tischtennis", "Surfen", "Skifahren", "Klettern", "Radfahren", "Leichtathletik", "Turnen", "Reiten", "Kampfsport"]
+    },
+    {
+      "name": "Tiere",
+      "words": ["Delfin", "Panda", "Koala", "Pinguin", "Elefant", "Gorilla", "Flamingo", "Axolotl", "Qualle", "Tintenfisch", "Gepard", "Schnabeltier", "Faultier", "Axolotl", "Kaiman"]
+    },
+    {
+      "name": "Berufe",
+      "words": ["Astronaut", "Chirurg", "Detektiv", "Feuerwehrmann", "Hacker", "Journalist", "Kapitän", "Molekularbiologe", "Ninja", "Politiker", "Richter", "Taucher", "Unterhändler", "Vulkanologe", "Zauberküntler"]
+    },
+    {
+      "name": "Essen & Trinken",
+      "words": ["Sushi", "Pizza", "Ramen", "Tacos", "Döner", "Burger", "Lasagne", "Matcha", "Tiramisu", "Fondue", "Currywurst", "Guacamole", "Crème brûlée", "Dim Sum", "Baklava"]
+    },
+    {
+      "name": "Länder",
+      "words": ["Japan", "Brasilien", "Nordkorea", "Neuseeland", "Island", "Kenia", "Marokko", "Kolumbien", "Thailand", "Grönland", "Bhutan", "Kuba", "Mongolei", "Argentinien", "Ghana"]
+    },
+    {
+      "name": "Musik",
+      "words": ["Rap", "Jazz", "Metal", "Classical", "K-Pop", "Reggae", "Techno", "Flamenco", "Gospel", "Punk", "Blues", "Opera", "Synthwave", "Bossa Nova", "Drum and Bass"]
+    },
+    {
+      "name": "Superkräfte",
+      "words": ["Unsichtbarkeit", "Zeitreise", "Telepathie", "Telekinese", "Fliegen", "Heilungsfaktor", "Schallbarriere", "Gedankenkontrolle", "Klonen", "Elementarkontrolle", "Zukunftssehen", "Schatten reisen", "Gedächtnislöschen", "Sprachentransformation", "Schwerkraftkontrolle"]
+    },
+    {
+      "name": "Orte",
+      "words": ["Strand", "Dschungel", "Wüste", "Nordpol", "Vulkan", "Unterwasser", "Weltall", "Geisterstadt", "Bibliothek", "Höhle", "Leuchtturm", "Treibhaus", "U-Bahn", "Raumstation", "Baumhaus"]
+    },
+    {
+      "name": "Mythologie",
+      "words": ["Zeus", "Thor", "Medusa", "Minotaurus", "Phönix", "Drache", "Kraken", "Yeti", "Einhorn", "Banshee", "Gorgone", "Pegasus", "Sphinx", "Wendigo", "Kitsune"]
+    },
+    {
+      "name": "Technologie",
+      "words": ["ChatGPT", "Blockchain", "Quantencomputer", "VR-Brille", "Drohne", "Neuralink", "3D-Drucker", "Smartwatch", "Roboter", "Satellit", "Scanner", "Hologramm", "Exoskelett", "Solaranlage", "Nanobot"]
+    },
+    {
+      "name": "Hobbys",
+      "words": ["Bogenschießen", "Origami", "Cosplay", "Parkour", "Urban Exploring", "Aquarium", "Kalligraphie", "Skateboarden", "Stricken", "Graffiti", "Tabletop", "Filmemachen", "Bierbrauen", "Vogelbeobachtung", "Escape Room"]
+    }
+  ]
+}

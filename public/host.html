@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Imposter — Host</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="container">
+
+    <!-- Header -->
+    <div class="card header">
+      <div class="header-logo">🕵️ Imposter <span style="font-size:13px; opacity:0.6">Host</span></div>
+      <div id="phaseBadge" class="phase-badge">Setup</div>
+    </div>
+
+    <!-- ════════════════════════════════════════
+         SETUP SECTION
+    ════════════════════════════════════════ -->
+    <div id="setupSection" class="card">
+
+      <!-- Host Modus Toggle -->
+      <div class="section-title">Spielmodus</div>
+      <div class="mode-toggle-group" id="modeToggle">
+        <button class="mode-btn active" data-mode="moderator">
+          <div class="mode-icon">🎙️</div>
+          <div class="mode-label">Nur Moderieren</div>
+          <div class="mode-desc">Du gibst den Begriff vor und siehst alles</div>
+        </button>
+        <button class="mode-btn" data-mode="play">
+          <div class="mode-icon">🎮</div>
+          <div class="mode-label">Mitspielen</div>
+          <div class="mode-desc">Du spielst mit — Begriff wird zufällig gewählt</div>
+        </button>
+      </div>
+
+      <!-- Name (nur wenn mitspielen) -->
+      <div id="hostNameRow" style="display:none; margin-top:12px">
+        <label class="input-label">Dein Name</label>
+        <input id="hostNameInput" class="input" placeholder="Dein Spielername" maxlength="20">
+      </div>
+
+      <div class="divider"></div>
+
+      <label class="input-label">Max. Spieleranzahl</label>
+      <input id="maxPlayers" class="input" type="number" value="12" min="2" max="20">
+      <div style="height:10px"></div>
+      <label class="input-label">Hinweise pro Spieler</label>
+      <select id="numHints" class="input">
+        <option value="1">1 Hinweis</option>
+        <option value="2" selected>2 Hinweise</option>
+        <option value="3">3 Hinweise</option>
+      </select>
+      <div style="height:10px"></div>
+      <button id="createBtn" class="btn btn-primary btn-full">🎮 Raum erstellen</button>
+      <div id="createError" class="error-msg"></div>
+    </div>
+
+    <!-- ════════════════════════════════════════
+         HOST LOBBY
+    ════════════════════════════════════════ -->
+    <div id="hostLobby" style="display:none">
+
+      <!-- Room Code -->
+      <div class="card" style="text-align:center">
+        <div class="section-title">Raumcode — mit Spielern teilen</div>
+        <div class="room-code-display" id="hostRoomCode">—</div>
+        <div style="color:var(--text-dim); font-size:12px; margin-top:6px">
+          Spieler öffnen <strong style="color:var(--accent)">/player.html</strong> und geben diesen Code ein
+        </div>
+      </div>
+
+      <!-- Players -->
+      <div class="card">
+        <div class="row-between" style="margin-bottom:10px">
+          <div class="section-title" style="margin:0">Spieler im Raum</div>
+          <div style="font-size:13px; color:var(--text-dim)"><span id="hostPlayerCount">0</span> Spieler</div>
+        </div>
+        <div class="players-list" id="hostPlayersList">
+          <div style="color:var(--text-dim); font-size:13px; text-align:center; padding:10px">Warte auf Spieler…</div>
+        </div>
+      </div>
+
+      <!-- ── MODERATOR MODE: Word Setup ── -->
+      <div id="wordSetupSection" class="card">
+        <div class="section-title">Runde einrichten</div>
+
+        <!-- Word source toggle (moderator mode only) -->
+        <div id="wordSourceToggle" class="word-source-group">
+          <button class="source-btn active" data-source="custom">✏️ Eigener Begriff</button>
+          <button class="source-btn" data-source="random">🎲 Zufällig</button>
+        </div>
+
+        <!-- Custom word input -->
+        <div id="customWordSection" style="margin-top:12px">
+          <label class="input-label">Kategorie (optional)</label>
+          <input id="hostCategory" class="input" placeholder="z.B. Anime, Tiere, Filme…">
+          <div style="height:10px"></div>
+          <label class="input-label">Begriff</label>
+          <input id="hostWord" class="input" placeholder="Das gesuchte Wort">
+        </div>
+
+        <!-- Random word preview -->
+        <div id="randomWordSection" style="display:none; margin-top:12px">
+          <div id="randomWordPreview" class="random-preview">
+            <div class="section-title" style="margin-bottom:4px">Zufälliges Wort</div>
+            <div id="randomCategoryDisplay" style="font-size:12px; color:var(--text-dim); margin-bottom:4px">—</div>
+            <div id="randomWordDisplay" style="font-size:24px; font-weight:900; color:var(--accent)">—</div>
+          </div>
+          <button class="btn btn-secondary btn-full mt-8" id="rerollBtn">🔀 Anderes Wort</button>
+        </div>
+
+        <div style="height:12px"></div>
+        <button id="setWordBtn" class="btn btn-primary btn-full">🎲 Rollen austeilen &amp; Spiel starten</button>
+        <div id="setWordError" class="error-msg"></div>
+      </div>
+
+      <!-- ── HOST-PLAYS MODE: Just start with random ── -->
+      <div id="hostPlaysWordSection" class="card" style="display:none">
+        <div class="section-title">Zufälliges Wort</div>
+        <div class="random-preview" id="hostPlaysPreview">
+          <div class="section-title" style="margin-bottom:4px; color:var(--accent2)">⚠️ Du wirst mitspielen!</div>
+          <div style="font-size:12px; color:var(--text-dim); margin-bottom:8px">
+            Das Wort wurde zufällig gewählt — du siehst es erst wenn das Spiel startet (oder gar nicht, wenn du der Imposter bist).
+          </div>
+          <div id="hostPlaysCategory" style="font-size:12px; color:var(--text-dim)">—</div>
+          <div id="hostPlaysWordHidden" style="font-size:22px; font-weight:900; color:var(--text-dim); letter-spacing:4px; margin-top:4px">••••••</div>
+        </div>
+        <button class="btn btn-secondary btn-full mt-8" id="hostPlaysRerollBtn">🔀 Anderes Wort wählen</button>
+        <div style="height:10px"></div>
+        <button id="hostPlaysStartBtn" class="btn btn-primary btn-full">🎲 Rollen austeilen &amp; Spiel starten</button>
+        <div id="hostPlaysError" class="error-msg"></div>
+      </div>
+
+      <!-- Secret Host Info (moderator mode) -->
+      <div id="hostInfoSection" class="host-info-box" style="display:none">
+        <div class="section-title" style="color:var(--yellow)">🔐 Nur für dich sichtbar</div>
+        <div id="hostSecretInfo" style="margin-top:6px; font-size:14px; line-height:1.8"></div>
+      </div>
+
+      <!-- HOST-PLAYS: Role Card (when host is a player) -->
+      <div id="hostRoleSection" style="display:none">
+        <div class="role-card" id="hostRoleCard">
+          <div class="category-label" id="hostCategoryLabel">Kategorie</div>
+          <div class="word-display" id="hostWordDisplay">—</div>
+          <span class="role-label player-label" id="hostRoleLabel">Spieler</span>
+        </div>
+
+        <!-- Hint section for host-player -->
+        <div class="card" id="hostHintSection">
+          <div class="row-between" style="margin-bottom:10px">
+            <div class="section-title" style="margin:0">Deine Hinweise</div>
+            <div style="font-size:12px; color:var(--text-dim)"><span id="hostHintsLeft">0</span> übrig</div>
+          </div>
+          <div id="hostMyHints" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; min-height:10px"></div>
+          <div class="row gap-8" id="hostHintInputRow">
+            <input id="hostHintInput" class="input" placeholder="Deinen Hinweis eingeben…">
+            <button id="hostSendHintBtn" class="btn btn-primary">Senden</button>
+          </div>
+          <div id="hostHintDoneMsg" style="display:none; text-align:center; padding:8px; color:var(--green); font-weight:700; font-size:14px">
+            ✅ Alle Hinweise gegeben
+          </div>
+        </div>
+      </div>
+
+      <!-- Voting Progress -->
+      <div id="voteProgressSection" class="card" style="display:none">
+        <div class="row-between" style="margin-bottom:6px">
+          <div class="section-title" style="margin:0">🗳️ Abstimmungsfortschritt</div>
+          <div style="font-size:13px; color:var(--accent); font-weight:700">
+            <span id="voteProgressCount">0</span> / <span id="voteProgressTotal">0</span>
+          </div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="voteProgressBar" style="width:0%"></div></div>
+        <div id="voteResultsPreview" style="margin-top:10px"></div>
+      </div>
+
+      <!-- HOST-PLAYS: Vote section -->
+      <div id="hostVotingSection" class="card" style="display:none">
+        <div class="section-title">🗳️ Wer ist der Imposter?</div>
+        <div style="color:var(--text-dim); font-size:13px; margin-bottom:12px">Wähle einen Spieler:</div>
+        <div id="hostVoteOptions" class="players-list"></div>
+        <div id="hostVoteDoneMsg" style="display:none; padding:10px; text-align:center; color:var(--green); font-weight:700">
+          ✅ Vote abgeschickt
+        </div>
+      </div>
+
+      <!-- HOST-PLAYS: Guess section -->
+      <div id="hostGuessSection" class="card" style="display:none; border-color:rgba(255,71,87,0.3)">
+        <div class="section-title" style="color:var(--accent2)">🎯 Du bist der Imposter — rate den Begriff!</div>
+        <div class="row gap-8 mt-8" id="hostGuessInputRow">
+          <input id="hostGuessInput" class="input" placeholder="Der Begriff ist…">
+          <button id="hostGuessBtn" class="btn btn-danger">Raten</button>
+        </div>
+        <div id="hostGuessDoneMsg" style="display:none; padding:10px; text-align:center; color:var(--green); font-weight:700">
+          ✅ Tipp abgeschickt!
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="card">
+        <div class="section-title">Spielsteuerung</div>
+        <div style="display:flex; flex-direction:column; gap:8px">
+          <button id="startVoteBtn" class="btn btn-yellow btn-full" style="display:none">🗳️ Voting starten</button>
+          <button id="revealBtn" class="btn btn-danger btn-full" style="display:none">🎭 Reveal</button>
+          <button id="newRoundBtn" class="btn btn-success btn-full" style="display:none">🔄 Neue Runde</button>
+        </div>
+      </div>
+
+      <!-- Reveal Section -->
+      <div id="revealSection" style="display:none">
+        <div class="card" style="text-align:center; border-color:rgba(0,212,255,0.3)">
+          <div class="section-title">Das gesuchte Wort</div>
+          <div class="reveal-word" id="revealWord">—</div>
+        </div>
+        <div class="imposter-reveal card">
+          <div class="section-title" style="color:var(--accent2)">🎭 Der Imposter war…</div>
+          <div class="name" id="revealImposterName">—</div>
+          <div class="guess-result" id="revealGuessResult"></div>
+        </div>
+        <div class="card">
+          <div class="section-title">🗳️ Abstimmungsergebnis</div>
+          <div id="revealVotes"></div>
+        </div>
+        <div class="card">
+          <div class="section-title">💬 Alle Hinweise</div>
+          <div class="players-list" id="revealPlayers"></div>
+        </div>
+      </div>
+
+    </div><!-- /hostLobby -->
+  </div><!-- /container -->
+
+  <div class="notification" id="toast"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/client.js"></script>
+  <script>ClientApp.initHost();</script>
+</body>
+</html>
