@@ -8,7 +8,7 @@
 </head>
 <body>
   <div class="container">
-    <!-- Header -->
+
     <div class="card header">
       <div class="header-logo">🕵️ Imposter</div>
       <div id="phaseBadge" class="phase-badge">Lobby</div>
@@ -20,35 +20,46 @@
       <input id="nameInput" class="input" placeholder="Name eingeben" maxlength="20">
       <div style="height:10px"></div>
       <label class="input-label">Raumcode</label>
-      <input id="codeInput" class="input" placeholder="z.B. AB12" maxlength="6" style="text-transform:uppercase; letter-spacing:3px; font-family:'Space Mono',monospace">
+      <input id="codeInput" class="input" placeholder="z.B. AB12 oder PARTY"
+             maxlength="8" style="text-transform:uppercase; letter-spacing:2px; font-family:'Space Mono',monospace">
       <div style="height:10px"></div>
       <button id="joinBtn" class="btn btn-primary btn-full">Beitreten →</button>
       <div id="joinError" class="error-msg"></div>
     </div>
 
-    <!-- Lobby / Game Area -->
+    <!-- Game Area -->
     <div id="gameArea" style="display:none">
-      <!-- Room Info -->
+
+      <!-- Room + Player count -->
       <div class="card">
         <div class="row-between">
           <div>
             <div class="section-title">Raum</div>
-            <div class="room-code-display" id="roomCodeDisplay" style="font-size:20px; padding:6px 10px; letter-spacing:3px">—</div>
+            <div class="room-code-display" id="roomCodeDisplay" style="font-size:20px; padding:6px 10px; letter-spacing:3px; margin:4px 0 0">—</div>
           </div>
           <div style="text-align:right">
             <div class="section-title">Spieler</div>
-            <div style="font-size:20px; font-weight:800; color:var(--accent)" id="playerCount">0</div>
+            <div style="font-size:24px; font-weight:900; color:var(--accent)" id="playerCount">0</div>
           </div>
         </div>
       </div>
 
-      <!-- Players List -->
-      <div class="card" id="playersCard">
-        <div class="section-title">Spieler im Raum</div>
-        <div class="players-list" id="playersList"></div>
+      <!-- Turn Order List (shown during hinting) -->
+      <div class="card" id="turnOrderCard" style="display:none">
+        <div class="row-between" style="margin-bottom:4px">
+          <div class="section-title" style="margin:0">🔁 Reihenfolge</div>
+          <div style="font-size:12px; color:var(--text-dim)">Runde <span id="hintRoundDisplay">1</span> / <span id="hintRoundTotal">2</span></div>
+        </div>
+        <div class="players-list" id="turnOrderList"></div>
       </div>
 
-      <!-- Role Card (shown after game starts) -->
+      <!-- Lobby player list (shown before game starts) -->
+      <div class="card" id="lobbyPlayersCard">
+        <div class="section-title">Spieler im Raum</div>
+        <div class="players-list" id="lobbyPlayersList"></div>
+      </div>
+
+      <!-- Role Card -->
       <div id="roleSection" style="display:none">
         <div class="role-card" id="roleCard">
           <div class="category-label" id="categoryLabel">Kategorie</div>
@@ -57,83 +68,84 @@
         </div>
       </div>
 
-      <!-- Hint Section -->
+      <!-- Hint input (only shown when it's YOUR turn) -->
       <div id="hintSection" class="card" style="display:none">
-        <div class="row-between" style="margin-bottom:10px">
-          <div class="section-title" style="margin:0">Deine Hinweise</div>
-          <div style="font-size:12px; color:var(--text-dim)"><span id="hintsLeft">0</span> übrig</div>
+        <div class="row-between" style="margin-bottom:8px">
+          <div class="section-title" style="margin:0">💬 Dein Hinweis ist dran!</div>
+          <div style="font-size:12px; color:var(--text-dim)">Runde <span id="myHintRound">1</span></div>
         </div>
-        <div id="myHints" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; min-height:10px"></div>
-        <div class="row gap-8" id="hintInputRow">
-          <input id="hintInput" class="input" placeholder="Deinen Hinweis eingeben…">
+        <div id="myHintsSoFar" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; min-height:6px"></div>
+        <div class="row gap-8">
+          <input id="hintInput" class="input" placeholder="Hinweis eingeben…" autofocus>
           <button id="sendHintBtn" class="btn btn-primary">Senden</button>
-        </div>
-        <div id="hintDoneMsg" style="display:none; text-align:center; padding:8px; color:var(--green); font-weight:700; font-size:14px">
-          ✅ Alle Hinweise gegeben — warte auf die anderen
         </div>
       </div>
 
-      <!-- Voting Section -->
-      <div id="votingSection" class="card" style="display:none">
-        <div class="section-title">🗳️ Abstimmung</div>
-        <div style="color:var(--text-dim); font-size:13px; margin-bottom:12px">
-          Wer ist der Imposter? Wähle einen Spieler aus:
+      <!-- Waiting for others (shown when not your turn, during hinting) -->
+      <div id="waitingSection" class="card" style="display:none">
+        <div style="text-align:center; padding:8px">
+          <div style="font-size:22px; margin-bottom:6px">⏳</div>
+          <div id="waitingText" style="font-weight:700; font-size:15px">Warte auf anderen Spieler…</div>
+          <div id="waitingSubtext" style="font-size:13px; color:var(--text-dim); margin-top:4px"></div>
         </div>
+      </div>
+
+      <!-- All hints done, waiting for voting -->
+      <div id="hintsCompleteSection" class="card" style="display:none">
+        <div style="text-align:center; padding:8px; color:var(--green)">
+          <div style="font-size:22px; margin-bottom:6px">✅</div>
+          <div style="font-weight:700">Alle Hinweise gegeben!</div>
+          <div style="font-size:13px; color:var(--text-dim); margin-top:4px">Warte auf den Host für das Voting…</div>
+        </div>
+      </div>
+
+      <!-- Voting -->
+      <div id="votingSection" class="card" style="display:none">
+        <div class="section-title">🗳️ Wer ist der Imposter?</div>
+        <div style="color:var(--text-dim); font-size:13px; margin-bottom:10px">Tippe auf deinen Verdacht:</div>
         <div id="voteOptions" class="players-list"></div>
         <div id="voteDoneMsg" style="display:none; padding:10px; text-align:center; color:var(--green); font-weight:700; font-size:14px">
           ✅ Vote abgeschickt — warte auf die anderen
         </div>
       </div>
 
-      <!-- Imposter Guess Section -->
+      <!-- Imposter Guess -->
       <div id="guessSection" class="card" style="display:none; border-color:rgba(255,71,87,0.3)">
-        <div class="section-title" style="color:var(--accent2)">🎯 Dein Rateschluss</div>
-        <div style="color:var(--text-dim); font-size:13px; margin-bottom:10px">Du bist enttarnt — rate jetzt den Begriff!</div>
-        <div class="row gap-8" id="guessInputRow">
+        <div class="section-title" style="color:var(--accent2)">🎯 Du bist enttarnt — rate den Begriff!</div>
+        <div class="row gap-8 mt-8" id="guessInputRow">
           <input id="guessInput" class="input" placeholder="Der Begriff ist…">
           <button id="guessBtn" class="btn btn-danger">Raten</button>
         </div>
-        <div id="guessDoneMsg" style="display:none; padding:10px; text-align:center; color:var(--green); font-weight:700; font-size:14px">
+        <div id="guessDoneMsg" style="display:none; padding:10px; text-align:center; color:var(--green); font-weight:700">
           ✅ Tipp abgeschickt!
         </div>
       </div>
 
-      <!-- Reveal Section -->
+      <!-- Reveal -->
       <div id="revealSection" style="display:none">
-        <div class="card" style="text-align:center; border-color:rgba(0,212,255,0.3)">
+        <div class="card" style="text-align:center; border-color:rgba(0,119,168,0.3)">
           <div class="section-title">Das gesuchte Wort</div>
           <div class="reveal-word" id="revealWord">—</div>
         </div>
-
         <div class="imposter-reveal card">
           <div class="section-title" style="color:var(--accent2)">🎭 Der Imposter war…</div>
           <div class="name" id="revealImposterName">—</div>
           <div class="guess-result" id="revealGuessResult"></div>
         </div>
-
         <div class="card">
-          <div class="section-title">🗳️ Ergebnis der Abstimmung</div>
+          <div class="section-title">🗳️ Abstimmungsergebnis</div>
           <div id="revealVotes"></div>
         </div>
-
         <div class="card">
           <div class="section-title">💬 Alle Hinweise</div>
           <div class="players-list" id="revealPlayers"></div>
         </div>
       </div>
 
-      <!-- Waiting for new round -->
-      <div id="waitingNewRound" style="display:none" class="card" style="text-align:center">
-        <div style="text-align:center; color:var(--text-dim); font-size:14px; padding:10px">
-          ⏳ Warte auf den Host für eine neue Runde…
-        </div>
-      </div>
-    </div>
-  </div>
+    </div><!-- /gameArea -->
+  </div><!-- /container -->
 
-  <!-- Notification Toast -->
   <div class="notification" id="toast"></div>
-
   <script src="/socket.io/socket.io.js"></script>
   <script src="/client.js"></script>
   <script>ClientApp.initPlayer();</script>
