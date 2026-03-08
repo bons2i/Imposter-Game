@@ -17,13 +17,30 @@ function makeCode(len = 4) {
   return s;
 }
 
-io.on('connection', (socket) => {
-  console.log('socket connected', socket.id);
+function shuffle(arr) {
+  const a = [...arr];
+  // Double-pass Fisher-Yates to avoid same-sequence repeats
+  for (let pass = 0; pass < 2; pass++) {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+  }
+  return a;
+}
 
-  // ── Create Room ──────────────────────────────────────────
+io.on('connection', (socket) => {
+  console.log('connected', socket.id);
+
+  // ── Create Room ──────────────────────────────────────────────
   socket.on('create-room', (data, cb) => {
-    let code;
-    do { code = makeCode(4); } while (rooms[code]);
+    // Allow custom code or generate one
+    let code = (data.customCode || '').toUpperCase().trim().replace(/[^A-Z0-9]/g, '').substring(0, 8);
+    if (!code) {
+      do { code = makeCode(4); } while (rooms[code]);
+    } else if (rooms[code]) {
+      return cb && cb({ ok: false, err: `Code "${code}" ist bereits vergeben` });
+    }
 
     const hostPlays = !!data.hostPlays;
     const hostName  = hostPlays ? (data.hostName || 'Host').trim().substring(0, 20) : null;
@@ -34,10 +51,14 @@ io.on('connection', (socket) => {
       hostName,
       config: { numHints: data.numHints || 2, maxPlayers: data.maxPlayers || 12 },
       category: null, word: null,
-      players: {}, phase: 'lobby', votes: {}, guesses: {}
+      players: {},       // socketId → { name, hints[], role, hasVoted, hasGuessed, order }
+      turnOrder: [],     // array of socketIds in randomised hint order
+      currentTurnIdx: 0, // which index in turnOrder is currently active
+      hintRound: 0,      // which hint round we're in (0-indexed, max config.numHints-1)
+      phase: 'lobby',
+      votes: {}, guesses: {}
     };
 
-    // If host plays, register them as a player immediately
     if (hostPlays) {
       rooms[code].players[socket.id] = {
         name: hostName, hints: [], role: 'player', hasVoted: false, hasGuessed: false
@@ -50,7 +71,7 @@ io.on('connection', (socket) => {
     console.log(`Room created: ${code} (hostPlays=${hostPlays})`);
   });
 
-  // ── Join Room (regular players) ───────────────────────────
+  // ── Join Room ─────────────────────────────────────────────────
   socket.on('join-room', ({ code, name }, cb) => {
     const room = rooms[code];
     if (!room) return cb && cb({ ok: false, err: 'Raum existiert nicht' });
@@ -60,6 +81,12 @@ io.on('connection', (socket) => {
     }
 
     const trimmedName = (name || 'Spieler').trim().substring(0, 20);
+    // Check duplicate names
+    const namesTaken = Object.values(room.players).map(p => p.name.toLowerCase());
+    if (namesTaken.includes(trimmedName.toLowerCase())) {
+      return cb && cb({ ok: false, err: `Name "${trimmedName}" ist bereits vergeben` });
+    }
+
     room.players[socket.id] = {
       name: trimmedName, hints: [], role: 'player', hasVoted: false, hasGuessed: false
     };
@@ -69,13 +96,13 @@ io.on('connection', (socket) => {
     console.log(`${trimmedName} joined ${code}`);
   });
 
-  // ── Set Word (host-only mode, host types the word) ────────
+  // ── Set Word (host provides word — works for moderator manual, moderator random, AND host-plays mode) ──
   socket.on('set-word', ({ code, category, word, numHints }, cb) => {
     const room = rooms[code];
     if (!room) return cb && cb({ ok: false, err: 'Raum nicht gefunden' });
     if (socket.id !== room.hostId) return cb && cb({ ok: false, err: 'Nur der Host' });
     if (!word || !word.trim()) return cb && cb({ ok: false, err: 'Bitte einen Begriff eingeben' });
-    if (Object.keys(room.players).length < 2) return cb && cb({ ok: false, err: 'Mindestens 2 Spieler benötigt' });
+    if (Object.keys(room.players).length < 2) return cb && cb({ ok: false, err: 'Mindestens 2 Spieler benoetigt' });
 
     room.category = (category || '').trim();
     room.word = word.trim();
@@ -83,21 +110,7 @@ io.on('connection', (socket) => {
     startGame(code, cb);
   });
 
-  // ── Set Word (random – client picked the word, host ALSO plays) ───
-  socket.on('set-word-random', ({ code, category, word, numHints }, cb) => {
-    const room = rooms[code];
-    if (!room) return cb && cb({ ok: false, err: 'Raum nicht gefunden' });
-    if (socket.id !== room.hostId) return cb && cb({ ok: false, err: 'Nur der Host' });
-    if (!word || !word.trim()) return cb && cb({ ok: false, err: 'Kein Wort' });
-    if (Object.keys(room.players).length < 2) return cb && cb({ ok: false, err: 'Mindestens 2 Spieler benötigt' });
-
-    room.category = (category || '').trim();
-    room.word = word.trim();
-    room.config.numHints = parseInt(numHints) || room.config.numHints;
-    startGame(code, cb);
-  });
-
-  // ── Core: assign roles and start hinting phase ────────────
+  // ── Core: start game, assign roles, set turn order ───────────
   function startGame(code, cb) {
     const room = rooms[code];
     room.phase = 'hinting';
@@ -105,8 +118,15 @@ io.on('connection', (socket) => {
     room.guesses = {};
 
     const playerIds = Object.keys(room.players);
+
+    // Random imposter
     const impIdx = Math.floor(Math.random() * playerIds.length);
     const impSocketId = playerIds[impIdx];
+
+    // Random turn order for hints
+    room.turnOrder = shuffle(playerIds);
+    room.currentTurnIdx = 0;
+    room.hintRound = 0;
 
     playerIds.forEach(pid => {
       room.players[pid].hints = [];
@@ -115,7 +135,7 @@ io.on('connection', (socket) => {
       room.players[pid].hasGuessed = false;
     });
 
-    // Tell every player their role
+    // Tell each player their role
     playerIds.forEach(pid => {
       io.to(pid).emit('role-assigned', {
         role: room.players[pid].role,
@@ -126,7 +146,7 @@ io.on('connection', (socket) => {
       });
     });
 
-    // If host is a pure moderator, tell them who the imposter is
+    // Moderator gets secret info
     if (!room.hostPlays) {
       io.to(room.hostId).emit('host-info', {
         imposterId: impSocketId,
@@ -136,84 +156,188 @@ io.on('connection', (socket) => {
       });
     }
 
+    // Broadcast the full turn order and first active player
+    broadcastTurnState(code);
     io.to(code).emit('room-state', sanitizeRoom(code));
     cb && cb({ ok: true });
     console.log(`Game started in ${code}: "${room.word}" imposter=${room.players[impSocketId].name}`);
+    console.log(`Turn order: ${room.turnOrder.map(id => room.players[id].name).join(' → ')}`);
   }
 
-  // ── Hints ─────────────────────────────────────────────────
+  // ── Send Hint (only active player can do this) ───────────────
   socket.on('send-hint', ({ code, hint }, cb) => {
     const room = rooms[code];
     if (!room) return cb && cb({ ok: false, err: 'Raum nicht gefunden' });
     if (!room.players[socket.id]) return cb && cb({ ok: false, err: 'Nicht im Raum' });
     if (room.phase !== 'hinting') return cb && cb({ ok: false, err: 'Falsche Phase' });
 
-    const p = room.players[socket.id];
-    if (p.hints.length >= room.config.numHints) {
-      return cb && cb({ ok: false, err: 'Maximale Hinweise erreicht' });
+    // Check it's this player's turn
+    const activeId = room.turnOrder[room.currentTurnIdx];
+    if (socket.id !== activeId) {
+      return cb && cb({ ok: false, err: 'Du bist noch nicht dran' });
     }
+
     const trimmed = String(hint || '').trim();
     if (!trimmed) return cb && cb({ ok: false, err: 'Leerer Hinweis' });
-    p.hints.push(trimmed);
 
-    io.to(code).emit('room-state', sanitizeRoom(code));
-    cb && cb({ ok: true, hintsLeft: room.config.numHints - p.hints.length });
+    room.players[socket.id].hints.push(trimmed);
+    cb && cb({ ok: true });
+
+    // Advance turn
+    advanceTurn(code);
   });
 
-  // ── Start Voting ──────────────────────────────────────────
-  socket.on('start-voting', ({ code }, cb) => {
+  function advanceTurn(code) {
     const room = rooms[code];
-    if (!room) return cb && cb({ ok: false, err: 'Raum nicht gefunden' });
-    if (socket.id !== room.hostId) return cb && cb({ ok: false, err: 'Nur der Host' });
+    room.currentTurnIdx++;
 
+    // End of one pass through all players
+    if (room.currentTurnIdx >= room.turnOrder.length) {
+      room.hintRound++;
+      room.currentTurnIdx = 0;
+
+      // All hint rounds done → auto-start voting
+      if (room.hintRound >= room.config.numHints) {
+        startVoting(code);
+        return;
+      }
+    }
+
+    broadcastTurnState(code);
+    io.to(code).emit('room-state', sanitizeRoom(code));
+  }
+
+  function startVoting(code) {
+    const room = rooms[code];
     room.phase = 'voting';
     room.votes = {};
     room.guesses = {};
 
-    const playerNames = Object.values(room.players).map(p => p.name);
-    io.to(code).emit('voting-started', { players: playerNames });
+    const playerNames = room.turnOrder.map(id => room.players[id].name);
+    const imposter = findImposter(room);
+
+    // Each player gets voting-started OR imposter-vote-phase — never both
+    room.turnOrder.forEach(pid => {
+      if (room.players[pid].role === 'imposter') {
+        io.to(pid).emit('imposter-vote-phase', {});
+      } else {
+        io.to(pid).emit('voting-started', { players: playerNames });
+      }
+    });
+
+    // Moderator host (not a player) gets the player list too for vote-progress display
+    if (!room.hostPlays) {
+      io.to(room.hostId).emit('voting-started', { players: playerNames });
+    }
+
     io.to(code).emit('room-state', sanitizeRoom(code));
+    console.log(`Voting auto-started in ${code}`);
+  }
+
+  // Host can also manually start voting early (moderator mode)
+  socket.on('start-voting', ({ code }, cb) => {
+    const room = rooms[code];
+    if (!room) return cb && cb({ ok: false, err: 'Raum nicht gefunden' });
+    if (socket.id !== room.hostId) return cb && cb({ ok: false, err: 'Nur der Host' });
+    startVoting(code);
     cb && cb({ ok: true });
   });
 
-  // ── Submit Vote ───────────────────────────────────────────
+  function broadcastTurnState(code) {
+    const room = rooms[code];
+    const activeId = room.turnOrder[room.currentTurnIdx];
+    if (!activeId || !room.players[activeId]) return; // safety: player may have just disconnected
+    const activeName = room.players[activeId].name;
+
+    // Send personalised 'your-turn' to active player
+    io.to(activeId).emit('your-turn', {
+      hintRound: room.hintRound + 1,
+      totalRounds: room.config.numHints
+    });
+
+    // Send turn state to everyone — omit socket IDs for cleanliness
+    io.to(code).emit('turn-state', {
+      activeName,
+      hintRound: room.hintRound + 1,
+      totalRounds: room.config.numHints,
+      turnOrder: room.turnOrder
+        .filter(id => room.players[id]) // skip any stale IDs
+        .map(id => ({
+          name: room.players[id].name,
+          hints: room.players[id].hints,
+          isMe: false // client will match by name
+        }))
+    });
+  }
+
+  // ── Submit Vote ───────────────────────────────────────────────
   socket.on('submit-vote', ({ code, voteFor }, cb) => {
     const room = rooms[code];
     if (!room) return cb && cb({ ok: false, err: 'Raum nicht gefunden' });
     if (!room.players[socket.id]) return cb && cb({ ok: false, err: 'Nicht im Raum' });
     if (room.phase !== 'voting') return cb && cb({ ok: false, err: 'Voting nicht aktiv' });
+    if (room.votes[socket.id]) return cb && cb({ ok: false, err: 'Du hast bereits gevotet' });
 
     room.votes[socket.id] = String(voteFor || '').trim();
     room.players[socket.id].hasVoted = true;
 
-    const playerIds = Object.keys(room.players);
-    const votedCount = Object.keys(room.votes).length;
-    const allVoted = playerIds.every(pid => room.votes[pid]);
+    const allPlayerIds = Object.keys(room.players);
+    const imposterIds = allPlayerIds.filter(pid => room.players[pid].role === 'imposter');
+    const nonImposterIds = allPlayerIds.filter(pid => room.players[pid].role !== 'imposter');
+    const votedCount = nonImposterIds.filter(pid => room.votes[pid]).length
+                     + imposterIds.filter(pid => room.guesses[pid]).length;
+    const totalVoters = allPlayerIds.length;
+    const allVoted = nonImposterIds.every(pid => room.votes[pid])
+                  && imposterIds.every(pid => room.guesses[pid]);
     const tally = {};
     Object.values(room.votes).forEach(n => { tally[n] = (tally[n] || 0) + 1; });
 
     io.to(code).emit('room-state', sanitizeRoom(code));
-    io.to(room.hostId).emit('vote-update', { votes: room.votes, totalVoters: playerIds.length, votedCount, allVoted, tally });
+    io.to(room.hostId).emit('vote-update', {
+      votes: room.votes, totalVoters, votedCount, allVoted, tally
+    });
     cb && cb({ ok: true });
   });
 
-  // ── Submit Guess (imposter) ───────────────────────────────
+  // ── Submit Guess (imposter) ───────────────────────────────────
   socket.on('submit-guess', ({ code, guess }, cb) => {
     const room = rooms[code];
     if (!room) return cb && cb({ ok: false, err: 'Raum nicht gefunden' });
     if (!room.players[socket.id]) return cb && cb({ ok: false, err: 'Nicht im Raum' });
+    if (room.phase !== 'voting') return cb && cb({ ok: false, err: 'Nur während des Votings möglich' });
     if (room.players[socket.id].role !== 'imposter') return cb && cb({ ok: false, err: 'Nur der Imposter' });
+    if (room.guesses[socket.id]) return cb && cb({ ok: false, err: 'Du hast bereits geraten' });
 
     const trimmed = String(guess || '').trim();
     if (!trimmed) return cb && cb({ ok: false, err: 'Leerer Tipp' });
     room.guesses[socket.id] = trimmed;
     room.players[socket.id].hasGuessed = true;
+
+    // Count progress: non-imposters vote, imposter guesses — both count toward allDone
+    const allPlayerIds = Object.keys(room.players);
+    const imposterIds = allPlayerIds.filter(pid => room.players[pid].role === 'imposter');
+    const nonImposterIds = allPlayerIds.filter(pid => room.players[pid].role !== 'imposter');
+    const votedCount = nonImposterIds.filter(pid => room.votes[pid]).length
+                     + imposterIds.filter(pid => room.guesses[pid]).length;
+    const totalVoters = allPlayerIds.length;
+    const allDone = nonImposterIds.every(pid => room.votes[pid])
+                 && imposterIds.every(pid => room.guesses[pid]);
+
+    const tally = {};
+    Object.values(room.votes).forEach(n => { tally[n] = (tally[n] || 0) + 1; });
+
     io.to(code).emit('room-state', sanitizeRoom(code));
+    // Notify host of updated progress
+    io.to(room.hostId).emit('vote-update', {
+      votes: room.votes, totalVoters, votedCount, allVoted: allDone, tally,
+      imposterGuessed: true, imposterGuess: trimmed
+    });
     cb && cb({ ok: true });
   });
 
-  // ── Reveal ────────────────────────────────────────────────
-  socket.on('reveal', ({ code }, cb) => {
+  // ── Reveal ────────────────────────────────────────────────────
+  // Host calls this with imposterGuessCorrect = true/false (manual approval)
+  socket.on('reveal', ({ code, imposterGuessCorrect }, cb) => {
     const room = rooms[code];
     if (!room || socket.id !== room.hostId) return;
 
@@ -226,7 +350,8 @@ io.on('connection', (socket) => {
     const revealData = {
       word: room.word, category: room.category, imposter,
       imposterGuess,
-      imposterGuessCorrect: !!(imposterGuess && imposterGuess.toLowerCase() === room.word.toLowerCase()),
+      // Host decided manually — fall back to auto if no guess
+      imposterGuessCorrect: imposterGuess ? !!imposterGuessCorrect : false,
       players: Object.entries(room.players).map(([id, p]) => ({
         id, name: p.name, role: p.role, hints: p.hints,
         votedFor: room.votes[id] || null,
@@ -240,7 +365,7 @@ io.on('connection', (socket) => {
     cb && cb({ ok: true });
   });
 
-  // ── New Round ─────────────────────────────────────────────
+  // ── New Round ─────────────────────────────────────────────────
   socket.on('new-round', ({ code }, cb) => {
     const room = rooms[code];
     if (!room || socket.id !== room.hostId) return cb && cb({ ok: false });
@@ -250,6 +375,9 @@ io.on('connection', (socket) => {
     room.guesses = {};
     room.word = null;
     room.category = null;
+    room.turnOrder = [];
+    room.currentTurnIdx = 0;
+    room.hintRound = 0;
 
     Object.keys(room.players).forEach(pid => {
       room.players[pid].hints = [];
@@ -263,7 +391,7 @@ io.on('connection', (socket) => {
     cb && cb({ ok: true });
   });
 
-  // ── Disconnect ────────────────────────────────────────────
+  // ── Disconnect ────────────────────────────────────────────────
   socket.on('disconnect', () => {
     for (const code of Object.keys(rooms)) {
       const room = rooms[code];
@@ -272,9 +400,16 @@ io.on('connection', (socket) => {
         delete rooms[code];
       } else if (room.players && room.players[socket.id]) {
         const name = room.players[socket.id].name;
+        // Remove from turn order too
+        room.turnOrder = room.turnOrder.filter(id => id !== socket.id);
+        if (room.currentTurnIdx >= room.turnOrder.length) room.currentTurnIdx = 0;
         delete room.players[socket.id];
         io.to(code).emit('player-left', { name });
         io.to(code).emit('room-state', sanitizeRoom(code));
+        // If mid-game and still hinting, re-broadcast turn state
+        if (room.phase === 'hinting' && room.turnOrder.length > 0) {
+          broadcastTurnState(code);
+        }
       }
     }
   });
@@ -284,12 +419,25 @@ io.on('connection', (socket) => {
 function sanitizeRoom(code) {
   const room = rooms[code];
   if (!room) return null;
+  const activeId = room.turnOrder[room.currentTurnIdx] || null;
   return {
     code, category: room.category, phase: room.phase,
     config: room.config, hostPlays: room.hostPlays,
-    players: Object.values(room.players).map(p => ({
-      name: p.name, hints: p.hints, hasVoted: p.hasVoted, hasGuessed: p.hasGuessed
-    })),
+    activeName: activeId ? room.players[activeId]?.name : null,
+    hintRound: room.hintRound + 1,
+    players: room.turnOrder.length > 0
+      // During game: use turn order
+      ? room.turnOrder.map(id => ({
+          name: room.players[id]?.name,
+          hints: room.players[id]?.hints || [],
+          hasVoted: room.players[id]?.hasVoted || false,
+          isActive: id === activeId && room.phase === 'hinting'
+        }))
+      // Lobby: unordered
+      : Object.values(room.players).map(p => ({
+          name: p.name, hints: p.hints,
+          hasVoted: p.hasVoted, isActive: false
+        })),
     numPlayers: Object.keys(room.players).length,
     votedCount: Object.keys(room.votes).length
   };
