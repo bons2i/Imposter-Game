@@ -376,9 +376,9 @@ body {
 
 /* Progress */
 .progress-bar {
-  height: 4px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 2px;
+  height: 6px;
+  background: rgba(0,0,0,0.1);
+  border-radius: 3px;
   margin-top: 8px;
   overflow: hidden;
 }
@@ -472,13 +472,6 @@ body {
   color: var(--text-dim);
   font-size: 15px;
   margin-bottom: 4px;
-}
-
-.modal-title {
-  font-size: 20px;
-  font-weight: 900;
-  margin-bottom: 14px;
-  color: var(--text);
 }
 
 /* Modal */
@@ -618,4 +611,11 @@ body {
   border-radius: 12px;
   padding: 14px;
   text-align: center;
+}
+
+/* ── Active player turn highlight ── */
+.player-row-active {
+  border: 2px solid var(--green) !important;
+  background: rgba(39,174,96,0.07) !important;
+  box-shadow: 0 0 0 3px rgba(39,174,96,0.12);
 }
